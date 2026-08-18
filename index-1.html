@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<title>Coupon Ledger — FGN Bonds</title>
+<meta name="theme-color" content="#0F1B2C" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Coupon Ledger" />
+<meta name="mobile-web-app-capable" content="yes" />
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<link rel="icon" href="icon-192.png" />
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: #0F1B2C;
+    color: #F1EDE3;
+    font-family: 'Inter', sans-serif;
+    padding: max(20px, env(safe-area-inset-top)) 14px 60px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .container { max-width: 640px; margin: 0 auto; }
+  .fgn-btn { transition: filter .15s ease, transform .1s ease; cursor: pointer; }
+  .fgn-btn:active { transform: scale(.98); }
+  .fgn-btn:hover { filter: brightness(1.12); }
+  ::selection { background: rgba(201,162,39,.35); }
+  input, select, button { font-family: 'Inter', sans-serif; }
+
+  header { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:20px; padding-bottom:14px; border-bottom:1px solid rgba(201,162,39,.25); }
+  .eyebrow { font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.14em; color:#C9A227; margin-bottom:4px; }
+  h1 { font-family:'Fraunces',serif; font-weight:600; font-size:30px; margin:0; color:#F1EDE3; }
+  .header-hint { font-family:'IBM Plex Mono',monospace; font-size:12px; color:#8A97A8; }
+
+  .stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px; }
+  .stat-card { background:#16253A; border:1px solid rgba(201,162,39,.16); border-radius:10px; padding:14px; }
+  .stat-label { font-size:11px; color:#8A97A8; margin-bottom:6px; }
+  .stat-value { font-family:'IBM Plex Mono',monospace; font-size:19px; font-weight:500; }
+
+  .tab-row { display:flex; gap:8px; margin-bottom:16px; align-items:center; }
+  .tab-btn { background:transparent; border:1px solid rgba(138,151,168,.3); color:#8A97A8; border-radius:20px; padding:7px 16px; font-size:13px; }
+  .tab-btn.active { background:rgba(201,162,39,.14); border-color:#C9A227; color:#E8C558; }
+  .add-btn { margin-left:auto; background:#C9A227; color:#0F1B2C; border:none; border-radius:20px; padding:8px 16px; font-size:13px; font-weight:600; }
+
+  .form-card { background:#16253A; border:1px solid rgba(201,162,39,.2); border-radius:12px; padding:16px; margin-bottom:20px; }
+  .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; }
+  label.field { display:flex; flex-direction:column; font-size:11px; color:#8A97A8; gap:5px; }
+  .form-input { background:#0F1B2C; border:1px solid rgba(138,151,168,.3); border-radius:6px; padding:8px 10px; color:#F1EDE3; font-size:13px; width:100%; }
+  .submit-btn { width:100%; background:#2E8B6E; color:#F1EDE3; border:none; border-radius:8px; padding:10px 0; font-size:14px; font-weight:600; }
+
+  .empty-state { text-align:center; padding:50px 20px; border:1px dashed rgba(138,151,168,.3); border-radius:12px; }
+  .empty-title { font-family:'Fraunces',serif; font-size:18px; margin-bottom:8px; }
+  .empty-body { font-size:13px; color:#8A97A8; line-height:1.5; max-width:380px; margin:0 auto; }
+
+  .glance-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
+  .nav-arrow { background:#16253A; border:1px solid rgba(201,162,39,.25); color:#E8C558; width:34px; height:34px; border-radius:50%; font-size:18px; line-height:1; flex-shrink:0; }
+  .glance-title-box { text-align:center; flex:1; }
+  .glance-month { font-family:'Fraunces',serif; font-size:19px; font-weight:600; }
+  .glance-total { font-family:'IBM Plex Mono',monospace; font-size:12px; color:#8A97A8; margin-top:2px; }
+  .glance-empty { text-align:center; padding:34px 10px; color:#8A97A8; font-size:13px; }
+  .glance-list { margin-top:14px; }
+  .glance-row { display:flex; align-items:center; background:#16253A; border-radius:8px; padding:10px 12px; margin-bottom:6px; cursor:pointer; gap:10px; }
+  .glance-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+  .glance-info { flex:1; min-width:0; }
+  .glance-label { font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .glance-sub { font-size:11px; color:#8A97A8; margin-top:1px; }
+  .glance-right { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+  .glance-amount { font-family:'IBM Plex Mono',monospace; font-size:13px; }
+  .status-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+
+  .holding-card { background:#16253A; border-radius:8px; padding:12px 14px; margin-bottom:10px; }
+  .holding-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; }
+  .holding-label { font-size:14px; font-weight:600; }
+  .holding-sub { font-size:12px; color:#8A97A8; margin-top:2px; }
+  .holding-amount { font-family:'IBM Plex Mono',monospace; font-size:14px; }
+  .holding-meta { display:flex; flex-wrap:wrap; gap:12px; font-size:11px; color:#8A97A8; margin-bottom:6px; }
+  .delete-row { font-size:12px; color:#D9695A; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .link-btn { background:none; border:none; color:#D9695A; text-decoration:underline; font-size:12px; cursor:pointer; padding:0; }
+  .link-btn-muted { background:none; border:none; color:#8A97A8; text-decoration:underline; font-size:11px; cursor:pointer; padding:0; }
+  .footer { text-align:center; margin-top:30px; font-size:11px; color:#5B6675; }
+  .save-note { text-align:center; font-size:11px; color:#5B6675; margin-top:6px; }
+</style>
+</head>
+<body>
+  <div class="container" id="app"></div>
+
+<script>
+const STORAGE_KEY = "fgn-bond-ledger-data";
+
+const PALETTE = [
+  { stripe: "#C9A227", tint: "rgba(201,162,39,0.14)", text: "#E8C558" },
+  { stripe: "#2E8B6E", tint: "rgba(46,139,110,0.16)", text: "#4FBF98" },
+  { stripe: "#B25C3A", tint: "rgba(178,92,58,0.16)", text: "#D98A63" },
+  { stripe: "#3A7FA6", tint: "rgba(58,127,166,0.16)", text: "#6FB2D9" },
+  { stripe: "#7A4E8C", tint: "rgba(122,78,140,0.16)", text: "#B389C4" },
+  { stripe: "#C77C2E", tint: "rgba(199,124,46,0.16)", text: "#E3A15C" },
+];
+
+const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const RATE_DEFAULTS = { 2: 13.963, 3: 14.963 };
+
+const STATUS_META = {
+  received: { label: "Received", color: "#4FBF98" },
+  overdue:  { label: "Overdue",  color: "#D9695A" },
+  due:      { label: "Due soon", color: "#E3A15C" },
+  upcoming: { label: "Upcoming", color: "#8A97A8" },
+};
+
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function naira(a){ const n = Number(a)||0; return "₦" + n.toLocaleString("en-NG",{maximumFractionDigits:0}); }
+function fmtDate(d){ return `${d.getDate()} ${MONTH_NAMES[d.getMonth()].slice(0,3)} ${d.getFullYear()}`; }
+function monthKey(d){ return `${d.getFullYear()}-${String(d.getMonth()).padStart(2,"0")}`; }
+function monthLabel(key){ const [y,m]=key.split("-").map(Number); return `${MONTH_NAMES[m]} ${y}`; }
+function todayStr(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+function generateSchedule(bond){
+  const issue = new Date(bond.issueDate + "T00:00:00");
+  const issueYear = issue.getFullYear();
+  const issueMonth = issue.getMonth();
+  const totalCoupons = bond.tenorYears * 4;
+  const schedule = [];
+  for (let i=1;i<=totalCoupons;i++){
+    const raw = issueMonth + i*3;
+    const year = issueYear + Math.floor(raw/12);
+    const month = ((raw%12)+12)%12;
+    const date = new Date(year, month, 15);
+    const isMaturity = i === totalCoupons;
+    const couponAmount = bond.amount * (bond.rate/100) * 0.25;
+    schedule.push({
+      id: `${bond.id}-${i}`, bondId: bond.id, seq: i, date,
+      couponAmount, principal: isMaturity ? bond.amount : 0,
+      total: couponAmount + (isMaturity ? bond.amount : 0), isMaturity,
+    });
+  }
+  return schedule;
+}
+
+// ---- state ----
+let state = {
+  bonds: [],
+  paid: {},
+  tab: "calendar",
+  showForm: false,
+  monthOffset: 0,
+  confirmDeleteId: null,
+  confirmReset: false,
+  saveNote: "",
+};
+
+function load(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      state.bonds = parsed.bonds || [];
+      state.paid = parsed.paid || {};
+    }
+  } catch(e) { /* start fresh */ }
+}
+
+function save(){
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ bonds: state.bonds, paid: state.paid }));
+  } catch(e) {
+    state.saveNote = "Couldn't save — your device storage may be full.";
+  }
+}
+
+function allCoupons(){ return state.bonds.flatMap(generateSchedule); }
+function bondColor(bondId){ const idx = state.bonds.findIndex(b=>b.id===bondId); return PALETTE[((idx%PALETTE.length)+PALETTE.length)%PALETTE.length]; }
+function bondLabel(bondId){ const b = state.bonds.find(x=>x.id===bondId); return b ? b.label : ""; }
+function couponStatus(c){
+  const today = new Date(); today.setHours(0,0,0,0);
+  if (state.paid[c.id]) return "received";
+  const diffDays = Math.round((c.date - today)/86400000);
+  if (diffDays < 0) return "overdue";
+  if (diffDays <= 30) return "due";
+  return "upcoming";
+}
+
+function render(){
+  const coupons = allCoupons();
+  const totalInvested = state.bonds.reduce((s,b)=>s+Number(b.amount),0);
+  const totalReceived = coupons.reduce((s,c)=> state.paid[c.id] ? s+c.couponAmount+c.principal : s, 0);
+  const now = new Date();
+  const thisMonthKey = monthKey(now);
+  const thisMonthTotal = coupons.filter(c=>monthKey(c.date)===thisMonthKey).reduce((s,c)=>s+c.total,0);
+  const activeBonds = state.bonds.filter(b=>{
+    const sched = generateSchedule(b); const last = sched[sched.length-1];
+    return last && last.date >= now;
+  }).length;
+
+  const target = new Date(now.getFullYear(), now.getMonth()+state.monthOffset, 1);
+  const mKey = monthKey(target);
+  const monthCoupons = coupons.filter(c=>monthKey(c.date)===mKey).sort((a,b)=>a.date-b.date);
+  const monthTotal = monthCoupons.reduce((s,c)=>s+c.total,0);
+  const isCurrent = state.monthOffset === 0;
+
+  let html = `
+    <header>
+      <div>
+        <div class="eyebrow">NGN · FGN SAVINGS BOND</div>
+        <h1>Coupon Ledger</h1>
+      </div>
+      <div class="header-hint">${fmtDate(now)}</div>
+    </header>
+
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-label">Total invested</div><div class="stat-value">${naira(totalInvested)}</div></div>
+      <div class="stat-card"><div class="stat-label">Coupons received</div><div class="stat-value" style="color:#4FBF98">${naira(totalReceived)}</div></div>
+      <div class="stat-card"><div class="stat-label">Due this month</div><div class="stat-value" style="color:#E3A15C">${naira(thisMonthTotal)}</div></div>
+      <div class="stat-card"><div class="stat-label">Active subscriptions</div><div class="stat-value">${activeBonds}</div></div>
+    </div>
+
+    <div class="tab-row">
+      <button class="fgn-btn tab-btn ${state.tab==='calendar'?'active':''}" data-action="tab" data-tab="calendar">This month</button>
+      <button class="fgn-btn tab-btn ${state.tab==='holdings'?'active':''}" data-action="tab" data-tab="holdings">Holdings</button>
+      <button class="fgn-btn add-btn" data-action="toggle-form">${state.showForm ? "Close" : "+ Add subscription"}</button>
+    </div>
+  `;
+
+  if (state.showForm) {
+    html += `
+    <form class="form-card" id="bond-form">
+      <div class="form-grid">
+        <label class="field">Amount subscribed (₦)
+          <input class="form-input" type="number" min="1" required name="amount" placeholder="500000" />
+        </label>
+        <label class="field">Tenor
+          <select class="form-input" name="tenorYears" id="tenor-select">
+            <option value="2">2-Year</option>
+            <option value="3">3-Year</option>
+          </select>
+        </label>
+        <label class="field">Coupon rate (% p.a.)
+          <input class="form-input" type="number" step="0.001" min="0" required name="rate" id="rate-input" value="${RATE_DEFAULTS[2]}" />
+        </label>
+        <label class="field">Subscription month
+          <input class="form-input" type="date" required name="issueDate" value="${todayStr()}" />
+        </label>
+        <label class="field">Label (optional)
+          <input class="form-input" type="text" name="label" placeholder="Auto-generated if left blank" />
+        </label>
+      </div>
+      <button type="submit" class="fgn-btn submit-btn">Save subscription</button>
+    </form>`;
+  }
+
+  if (state.bonds.length === 0) {
+    html += `
+    <div class="empty-state">
+      <div class="empty-title">Your ledger is empty</div>
+      <div class="empty-body">Add your first FGN Savings Bond subscription to start tracking coupons — each one lands here on the 15th, quarterly, colour-coded by bond.</div>
+    </div>`;
+  } else if (state.tab === "calendar") {
+    html += `
+    <div class="glance-header">
+      <button class="fgn-btn nav-arrow" data-action="month" data-dir="-1">‹</button>
+      <div class="glance-title-box">
+        <div class="glance-month">${monthLabel(mKey)}</div>
+        <div class="glance-total">${monthCoupons.length===0 ? "No coupons" : `${naira(monthTotal)} · ${monthCoupons.length} bond${monthCoupons.length>1?"s":""}`}</div>
+      </div>
+      <button class="fgn-btn nav-arrow" data-action="month" data-dir="1">›</button>
+    </div>`;
+    if (!isCurrent) html += `<button class="link-btn-muted" data-action="month-reset">Back to this month</button>`;
+
+    if (monthCoupons.length === 0) {
+      html += `<div class="glance-empty">Nothing paying out in ${monthLabel(mKey)}.</div>`;
+    } else {
+      html += `<div class="glance-list">`;
+      monthCoupons.forEach(c => {
+        const color = bondColor(c.bondId);
+        const meta = STATUS_META[couponStatus(c)];
+        html += `
+        <div class="glance-row" data-action="toggle-paid" data-id="${c.id}">
+          <span class="glance-dot" style="background:${color.stripe}"></span>
+          <div class="glance-info">
+            <div class="glance-label">${esc(bondLabel(c.bondId))}</div>
+            <div class="glance-sub">${fmtDate(c.date)}${c.isMaturity ? " · matures" : ""}</div>
+          </div>
+          <div class="glance-right">
+            <div class="glance-amount">${naira(c.total)}</div>
+            <span class="status-dot" style="background:${meta.color}" title="${meta.label}"></span>
+          </div>
+        </div>`;
+      });
+      html += `</div>`;
+    }
+  } else {
+    state.bonds.forEach(b => {
+      const sched = generateSchedule(b);
+      const color = bondColor(b.id);
+      const received = sched.filter(c=>state.paid[c.id]).length;
+      const maturity = sched[sched.length-1].date;
+      const next = sched.find(c=>!state.paid[c.id]);
+      html += `
+      <div class="holding-card" style="border-left:3px solid ${color.stripe}">
+        <div class="holding-top">
+          <div>
+            <div class="holding-label">${esc(b.label)}</div>
+            <div class="holding-sub">${b.tenorYears}-Yr · ${b.rate}% p.a. · subscribed ${fmtDate(new Date(b.issueDate+"T00:00:00"))}</div>
+          </div>
+          <div class="holding-amount">${naira(b.amount)}</div>
+        </div>
+        <div class="holding-meta">
+          <span>Matures ${fmtDate(maturity)}</span>
+          <span>${received}/${sched.length} coupons received</span>
+          ${next ? `<span>Next: ${fmtDate(next.date)} · ${naira(next.total)}</span>` : ""}
+        </div>
+        ${state.confirmDeleteId === b.id
+          ? `<div class="delete-row">Remove this subscription and its history?
+              <button class="link-btn" data-action="delete-confirm" data-id="${b.id}">Yes, remove</button>
+              <button class="link-btn-muted" data-action="delete-cancel">Cancel</button>
+            </div>`
+          : `<button class="link-btn-muted" data-action="delete-ask" data-id="${b.id}">Remove</button>`
+        }
+      </div>`;
+    });
+  }
+
+  html += `<div class="footer">
+    <button class="link-btn-muted" data-action="backup">Save backup</button> ·
+    <button class="link-btn-muted" data-action="restore">Restore backup</button>
+    <input type="file" id="restore-file" accept="application/json" style="display:none" />
+  </div>`;
+  html += `<div class="footer">`;
+  if (state.confirmReset) {
+    html += `Erase all subscriptions and history?
+      <button class="link-btn" data-action="reset-confirm">Yes, erase</button> ·
+      <button class="link-btn" data-action="reset-cancel">Cancel</button>`;
+  } else {
+    html += `<button class="link-btn-muted" data-action="reset-ask">Reset ledger</button>`;
+  }
+  html += `</div>`;
+  if (state.saveNote) html += `<div class="save-note">${esc(state.saveNote)}</div>`;
+
+  document.getElementById("app").innerHTML = html;
+  attachEvents();
+}
+
+function attachEvents(){
+  const app = document.getElementById("app");
+
+  app.querySelectorAll('[data-action="tab"]').forEach(el => {
+    el.onclick = () => { state.tab = el.dataset.tab; render(); };
+  });
+
+  const toggleFormBtn = app.querySelector('[data-action="toggle-form"]');
+  if (toggleFormBtn) toggleFormBtn.onclick = () => { state.showForm = !state.showForm; render(); };
+
+  const tenorSelect = app.querySelector("#tenor-select");
+  if (tenorSelect) tenorSelect.onchange = () => {
+    const rateInput = app.querySelector("#rate-input");
+    rateInput.value = RATE_DEFAULTS[Number(tenorSelect.value)] || rateInput.value;
+  };
+
+  const form = app.querySelector("#bond-form");
+  if (form) form.onsubmit = (e) => {
+    e.preventDefault();
+    const fd = new FormData(form);
+    const amount = Number(fd.get("amount"));
+    const rate = Number(fd.get("rate"));
+    const issueDate = fd.get("issueDate");
+    const tenorYears = Number(fd.get("tenorYears"));
+    if (!amount || amount <= 0 || !rate || rate <= 0 || !issueDate) return;
+    const issue = new Date(issueDate + "T00:00:00");
+    const label = (fd.get("label") || "").trim() ||
+      `${MONTH_NAMES[issue.getMonth()].slice(0,3)} ${issue.getFullYear()} · ${tenorYears}-Yr`;
+    state.bonds.push({ id: uid(), label, amount, rate, tenorYears, issueDate });
+    save();
+    state.showForm = false;
+    render();
+  };
+
+  app.querySelectorAll('[data-action="toggle-paid"]').forEach(el => {
+    el.onclick = () => {
+      const id = el.dataset.id;
+      state.paid[id] = !state.paid[id];
+      save();
+      render();
+    };
+  });
+
+  app.querySelectorAll('[data-action="month"]').forEach(el => {
+    el.onclick = () => { state.monthOffset += Number(el.dataset.dir); render(); };
+  });
+  const monthReset = app.querySelector('[data-action="month-reset"]');
+  if (monthReset) monthReset.onclick = () => { state.monthOffset = 0; render(); };
+
+  app.querySelectorAll('[data-action="delete-ask"]').forEach(el => {
+    el.onclick = () => { state.confirmDeleteId = el.dataset.id; render(); };
+  });
+  const deleteCancel = app.querySelector('[data-action="delete-cancel"]');
+  if (deleteCancel) deleteCancel.onclick = () => { state.confirmDeleteId = null; render(); };
+  app.querySelectorAll('[data-action="delete-confirm"]').forEach(el => {
+    el.onclick = () => {
+      const id = el.dataset.id;
+      state.bonds = state.bonds.filter(b=>b.id!==id);
+      Object.keys(state.paid).forEach(k => { if (k.startsWith(id+"-")) delete state.paid[k]; });
+      state.confirmDeleteId = null;
+      save();
+      render();
+    };
+  });
+
+  const resetAsk = app.querySelector('[data-action="reset-ask"]');
+  if (resetAsk) resetAsk.onclick = () => { state.confirmReset = true; render(); };
+  const resetCancel = app.querySelector('[data-action="reset-cancel"]');
+  if (resetCancel) resetCancel.onclick = () => { state.confirmReset = false; render(); };
+  const resetConfirm = app.querySelector('[data-action="reset-confirm"]');
+  if (resetConfirm) resetConfirm.onclick = () => {
+    state.bonds = []; state.paid = {}; state.confirmReset = false;
+    save();
+    render();
+  };
+
+  const backupBtn = app.querySelector('[data-action="backup"]');
+  if (backupBtn) backupBtn.onclick = () => {
+    const dataStr = JSON.stringify({ bonds: state.bonds, paid: state.paid }, null, 2);
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `coupon-ledger-backup-${todayStr()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    state.saveNote = "Backup saved to your downloads/files.";
+    render();
+  };
+
+  const restoreBtn = app.querySelector('[data-action="restore"]');
+  const restoreFile = app.querySelector("#restore-file");
+  if (restoreBtn && restoreFile) {
+    restoreBtn.onclick = () => restoreFile.click();
+    restoreFile.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const parsed = JSON.parse(reader.result);
+          if (!Array.isArray(parsed.bonds)) throw new Error("bad format");
+          state.bonds = parsed.bonds;
+          state.paid = parsed.paid || {};
+          state.saveNote = "Backup restored.";
+          save();
+          render();
+        } catch (err) {
+          state.saveNote = "That file didn't look like a valid backup.";
+          render();
+        }
+      };
+      reader.readAsText(file);
+    };
+  }
+}
+
+load();
+render();
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  });
+}
+
+// Ask the browser to treat this app's storage as persistent (best effort;
+// mainly effective on Android Chrome). Reduces the already-small chance of
+// automatic eviction under heavy device storage pressure.
+if (navigator.storage && navigator.storage.persist) {
+  navigator.storage.persist().catch(() => {});
+}
+</script>
+</body>
+</html>
